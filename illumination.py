@@ -5,6 +5,8 @@ import scipy.ndimage as sn
 import scipy.optimize as so
 from skimage import restoration
 
+from psf_generator import *
+
 
 
 def load_im(fn):
@@ -88,8 +90,7 @@ def demo(psf, image):
 def normalize(im):
     return im / im.sum()
 
-
-if __name__ == "__main__":
+def deconv_demo():
     psf = load_im(".\gaussian3.png")
     psf = normalize(psf)
 
@@ -97,3 +98,17 @@ if __name__ == "__main__":
 
     demo(psf, image)
     plt.show(block=True)
+
+def psf_demo():
+    z = 2000e-5
+
+    r = 20
+    lims = 2 * r + 1
+
+    psf = GLA_psf(z, lims, lims, **defaults)
+    show_field(psf, "psf")
+    plt.show(block=True)
+
+if __name__ == "__main__":
+    #deconv_demo()
+    psf_demo()
