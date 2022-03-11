@@ -14,6 +14,10 @@ def load_im(fn):
     im = cv2.cvtColor(im, cv2.COLOR_BGR2GRAY)
     return im.astype(float) / 255
 
+def save_im(fn, im):
+    im = (im * 255).astype(int)
+    im = cv2.imwrite(fn, im)
+    
 def show_field(im, title):
     plt.figure()
     r = plt.pcolormesh(im, shading='auto')
@@ -78,10 +82,17 @@ def solve_lsq(psf, image):
 
     return res
 
+def upscale(im, scale=2):
+    x = np.repeat(im, scale, axis=0)
+    x = np.repeat(x, scale, axis=1)
+
+    return x
+
 def demo(psf, image):
     preimage = solve_deconvolve(psf, image)
     result = forward(psf, preimage)
 
+    show_field(psf, "psf")
     show_field(image, "desired output")
     show_field(preimage, "optimal input")
     show_field(result, "actual output")
@@ -91,24 +102,28 @@ def normalize(im):
     return im / im.sum()
 
 def deconv_demo():
-    psf = load_im(".\gaussian3.png")
+    #psf = load_im(".\gaussian3.png")
+    psf = np.load("GLA1e-6real.npy")
     psf = normalize(psf)
 
     image = load_im(".\demo2.png")
+    image = upscale(image, 8)
 
     demo(psf, image)
     plt.show(block=True)
 
 def psf_demo():
-    z = 1000e-5
+    z = 0 #2000e-9
 
-    r = 10
+    r = 20
     lims = 2 * r + 1
 
     psf = GLA_psf(z, lims, lims, **defaults)
+    np.save("GLA1e-6real.npy", psf, allow_pickle=False)
+
     show_field(psf, "psf")
     plt.show(block=True)
 
 if __name__ == "__main__":
-    #deconv_demo()
     psf_demo()
+    deconv_demo()

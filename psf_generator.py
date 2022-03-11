@@ -71,8 +71,11 @@ def GLA_psf(z, xlim, ylim, **kwargs):
     xmax = kwargs.get("xmax", 1.0)
     ymax = kwargs.get("ymax", 1.0)
 
-    dx = 2 * xmax / xlim
-    dy = 2 * ymax / ylim 
+    if kwargs.get("dx", None) is not None:
+        dx = dy = kwargs.get("dx")
+    else:
+        dx = 2 * xmax / xlim
+        dy = 2 * ymax / ylim 
 
     zd = kwargs.get("zd", 1.0)
     C = kwargs.get("C", 1.0)
@@ -112,22 +115,24 @@ def GLA_psf(z, xlim, ylim, **kwargs):
 
 wavelength = 610e-9
 
-xmax = ymax = 5e-9
+xmax = ymax = None # 7e-4
+dx = dy = 100e-9
 
 defaults = {
-    "na"    : 1.3,
+    "na"    : 1.4,
     "n_s"   : 1.33,
-    "n_g"   : 1.4,
+    "n_g"   : 1.5,
     "n_i"   : 1.5,
-    "n_g_"  : 1.4,
-    "n_i_"  : 1.3,
-    "t_s"   : 3,
-    "t_g"   : 150e-6,
-    "t_i"   : 150e-6,
-    "t_g_"  : 150e-6,
+    "n_g_"  : 1.5,
+    "n_i_"  : 1.5,
+    "t_s"   : 0,
+    "t_g"   : 170e-6,
+    "t_i"   : 130e-6,
+    "t_g_"  : 170e-6,
     "t_i_"  : 150e-6,
     "xmax"  : xmax,
     "ymax"  : ymax,
+    "dx"    : dx,
     "C"     : 1e6,
     "k"     : 2 * np.pi / wavelength,
     "alpha" : 1e-6,
