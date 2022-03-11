@@ -100,9 +100,9 @@ def deconv_demo():
     plt.show(block=True)
 
 def psf_demo():
-    z = 2000e-5
+    z = 1000e-5
 
-    r = 20
+    r = 10
     lims = 2 * r + 1
 
     psf = GLA_psf(z, lims, lims, **defaults)

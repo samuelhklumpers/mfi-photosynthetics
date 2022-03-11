@@ -39,11 +39,10 @@ def GLA_int(z, r, **kwargs):
 
     w = W(**kwargs)
 
-    a = na / z # z is the focal length 
-
     def f(rho):
         # moved C and zd here because of numerical issues
-        return C / zd * ss.j0(k * a * rho * r / z) * np.exp((1.j - alpha) * w(rho)) * rho
+        # return C / zd * ss.j0(k * a * rho * r / z) * np.exp((1.j - alpha) * w(rho)) * rho
+        return C / zd * ss.j0(k * na * rho * r) * np.exp((1.j - alpha) * w(rho)) * rho
 
     return f
 
@@ -61,6 +60,13 @@ def iquad(f, a, b, **kwargs):
 def GLA_psf(z, xlim, ylim, **kwargs):
     #dx = kwargs.get("dx", 1.0)
     #dy = kwargs.get("dy", 1.0)
+
+    na = kwargs.get("na")
+    n_s = kwargs.get("n_s")
+    n_g = kwargs.get("n_g")
+    n_i = kwargs.get("n_i")
+    n_g_ = kwargs.get("n_g_")
+    n_i_ = kwargs.get("n_i_")
 
     xmax = kwargs.get("xmax", 1.0)
     ymax = kwargs.get("ymax", 1.0)
@@ -80,13 +86,15 @@ def GLA_psf(z, xlim, ylim, **kwargs):
     num = psf.size
     ind = 0
 
+    upper = np.min([na, n_s, n_g, n_i, n_g_, n_i_]) / na
+
     for ((i, j), _) in np.ndenumerate(psf):
         x, y = (xc + i) * dx, (yc + j) * dy
         r = (x ** 2 + y ** 2) ** 0.5
         
         f = GLA_int(z, r, **kwargs)
 
-        v = iquad(f, 0, 1)
+        v = iquad(f, 0, upper)
         # print(v)
 
         psf[i, j] = np.abs(v) ** 2
@@ -104,10 +112,10 @@ def GLA_psf(z, xlim, ylim, **kwargs):
 
 wavelength = 610e-9
 
-xmax = ymax = 3e-10
+xmax = ymax = 5e-9
 
 defaults = {
-    "na"    : 1.3 - 0.01, # forall na < n_x, otherwise we get negative sqrts
+    "na"    : 1.3,
     "n_s"   : 1.33,
     "n_g"   : 1.4,
     "n_i"   : 1.5,
@@ -122,7 +130,7 @@ defaults = {
     "ymax"  : ymax,
     "C"     : 1e6,
     "k"     : 2 * np.pi / wavelength,
-    "alpha" : 0,
+    "alpha" : 1e-6,
     "zd"    : 2000e-9
 }
 
