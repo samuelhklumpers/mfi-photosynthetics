@@ -17,7 +17,7 @@ def load_im(fn):
 def save_im(fn, im):
     im = (im * 255).astype(int)
     im = cv2.imwrite(fn, im)
-    
+
 def show_field(im, title):
     plt.figure()
     r = plt.pcolormesh(im, shading='auto')
@@ -30,7 +30,7 @@ def forward(psf, image):
 
 def solve_deconvolve(psf, image):
     res = restoration.wiener(image, psf, 0.01)
-    return np.abs(res)
+    return res# np.abs(res)
 
 def take_(a, ix):
     try:
@@ -54,7 +54,7 @@ def solve_lsq(psf, image):
 
     total = len(list(np.ndenumerate(image)))
     num = 0
-    for ((i, j), _) in np.ndenumerate(image):  
+    for ((i, j), _) in np.ndenumerate(image):
         for ((k, l), _) in np.ndenumerate(psf):
 
             n, m = i - k, j - l
@@ -76,7 +76,7 @@ def solve_lsq(psf, image):
 
     print("solved", res)
     print(res.shape, image.shape)
-    
+
     res = res.reshape(image.shape)
 
 
@@ -102,12 +102,12 @@ def normalize(im):
     return im / im.sum()
 
 def deconv_demo():
-    #psf = load_im(".\gaussian3.png")
-    psf = np.load("GLA1e-6real.npy")
+    psf = load_im(".\strange.png")
+    #psf = np.load("psf2.npy")
     psf = normalize(psf)
 
     image = load_im(".\demo2.png")
-    image = upscale(image, 8)
+    image = upscale(image, 1)
 
     demo(psf, image)
     plt.show(block=True)
@@ -125,5 +125,5 @@ def psf_demo():
     plt.show(block=True)
 
 if __name__ == "__main__":
-    psf_demo()
+    #psf_demo()
     deconv_demo()
