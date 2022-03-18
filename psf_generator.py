@@ -116,7 +116,7 @@ def GLA_psf(z, xlim, ylim, **kwargs):
 wavelength = 610e-9
 
 xmax = ymax = None # 7e-4
-dx = dy = 100e-9
+dx = dy = 800e-9
 
 defaults = {
     "na"    : 1.4,
