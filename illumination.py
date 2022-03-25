@@ -6,24 +6,8 @@ import scipy.optimize as so
 from skimage import restoration
 
 from psf_generator import *
+from util import *
 
-
-
-def load_im(fn):
-    im = cv2.imread(fn)
-    im = cv2.cvtColor(im, cv2.COLOR_BGR2GRAY)
-    return im.astype(float) / 255
-
-def save_im(fn, im):
-    im = (im * 255).astype(int)
-    im = cv2.imwrite(fn, im)
-
-def show_field(im, title):
-    plt.figure()
-    r = plt.pcolormesh(im, shading='auto')
-    plt.colorbar(r)
-    plt.title(title)
-    plt.show(block=False)
 
 def forward(psf, image):
     return sn.convolve(image, psf, mode="constant")
@@ -32,64 +16,66 @@ def solve_deconvolve(psf, image):
     res = restoration.wiener(image, psf, 0.01)
     return res# np.abs(res)
 
-def take_(a, ix):
-    try:
-        return a[ix]
-    except:
-        return 0
-
-def bounds2(x, y):
-    def f(i, j):
-        return (0 <= i < x) and (0 <= j < y)
-
-    return f
-
 def solve_lsq(psf, image):
-    b = image.flat
-    A = np.zeros((len(b), len(b)))
+    def F(x):
+        x = np.reshape(x, image.shape)
+        return (image - forward(psf, x)).flatten()
 
-    print("solving")
+    x0 = image.copy().flatten()
 
-    bounds = bounds2(*image.shape)
+    res = so.least_squares(F, x0, max_nfev=10, verbose=2)
 
-    total = len(list(np.ndenumerate(image)))
-    num = 0
-    for ((i, j), _) in np.ndenumerate(image):
-        for ((k, l), _) in np.ndenumerate(psf):
+    return res['x']
 
-            n, m = i - k, j - l
-            if bounds(n, m):
-                x = np.ravel_multi_index((i, j), image.shape)
-                y = np.ravel_multi_index((n, m), image.shape)
+def solve_lsq_jac(psf, image):
+    def g(x):
+        x = np.reshape(x, image.shape)
+        return (image - forward(psf, x)).flatten()
 
-                v = take_(psf, (k, l))
-                A[x, y] = v
+    def F(x):
+        return np.linalg.norm(g(x))
 
-        num += 1
+    Jg = np.zeros((image.size, image.size))
+    N, M = image.shape
 
-        if num % 1000 == 0:
-            print(num, "out of", total)
+    psf_pad = np.pad(psf, ((M, M), (M, M)))
+    
+    print("precompute J")
+    K = image.size
+    # this least squares gives bad results for all but small gaussian psfs
+    # the jacobian might be wrong
+    for (i, j), _ in np.ndenumerate(image):
+        Jg[M * i + j, :] = -psf_pad[i + M:i:-1, j + M:j:-1].flatten()
+            # Jg[M * i + j, M * k + l] = -take_(psf, (i - k, j - l))
 
-    print("matrix is", A)
+            # -psf[i:i - M, j:j - M].flatten()[M * k + l] = -psf[i:i - M, j:j - M][k, l] = -psf[i - k][j - l]
+            # Jg[M * i + j, :] = -psf[i:i - M, j:j - M].flatten()
 
-    res = so.lsq_linear(A, b, bounds=(0, np.inf))
+        if (M * i + j) % (K // 10) == 0:
+            print("progress", M * i + j, "out of", K)
 
-    print("solved", res)
-    print(res.shape, image.shape)
+    def jac(x):
+        return 2 * np.dot(g(x), Jg)
 
-    res = res.reshape(image.shape)
+    x0 = image.flatten()
 
+    res = so.least_squares(F, x0, jac=jac, max_nfev=100, verbose=2)
 
-    return res
+    return res['x'].reshape(image.shape)
 
-def upscale(im, scale=2):
-    x = np.repeat(im, scale, axis=0)
-    x = np.repeat(x, scale, axis=1)
+def solve_demo(solver):
+    #psf = load_im(".\psfs\gaussian3.png")
+    psf = np.load(".\psfs\psf2.npy")
 
-    return x
+    psf = normalize(psf)
+    psf = downscale(psf, 8)
 
-def demo(psf, image):
-    preimage = solve_deconvolve(psf, image)
+    image = load_im(".\images\demo2.png")
+    image = upscale(image, 2)
+    #image = zero_pad(image, 4)
+
+    
+    preimage = solver(psf, image)
     result = forward(psf, preimage)
 
     show_field(psf, "psf")
@@ -97,19 +83,6 @@ def demo(psf, image):
     show_field(preimage, "optimal input")
     show_field(result, "actual output")
 
-
-def normalize(im):
-    return im / im.sum()
-
-def deconv_demo():
-    psf = load_im(".\strange.png")
-    #psf = np.load("psf2.npy")
-    psf = normalize(psf)
-
-    image = load_im(".\demo2.png")
-    image = upscale(image, 1)
-
-    demo(psf, image)
     plt.show(block=True)
 
 def psf_demo():
@@ -119,11 +92,11 @@ def psf_demo():
     lims = 2 * r + 1
 
     psf = GLA_psf(z, lims, lims, **defaults)
-    np.save("GLA1e-6real.npy", psf, allow_pickle=False)
+    np.save(".\psfs\GLA1e-6real.npy", psf, allow_pickle=False)
 
     show_field(psf, "psf")
     plt.show(block=True)
 
 if __name__ == "__main__":
     #psf_demo()
-    deconv_demo()
+    solve_demo(solve_lsq_jac)
