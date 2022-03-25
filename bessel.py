@@ -90,8 +90,8 @@ def R(r, a, upper, **kwargs):
 
 
 def PSF(rs, zs, **kwargs):
-    N = 50
-    K = 500
+    N = 100
+    K = 200
 
     #b = np.min([na, n_s, n_g, n_i, n_g_, n_i_]) / na
     upper = 0.5
@@ -113,12 +113,12 @@ def PSF(rs, zs, **kwargs):
     return np.abs(np.matmul(c, Rs.T))**2
 
 
-wavelength = 610e-9
+wavelength = 600e-9
 
 xmax = ymax = None # 7e-4
 
 defaults = {
-    "na"    : 1.4,
+    "na"    : 1.5,
     "n_s"   : 1.33,
     "n_g"   : 1.5,
     "n_i"   : 1.7,
@@ -127,47 +127,63 @@ defaults = {
     "t_s"   : 0,
     "t_g"   : 170e-6,
     "t_i"   : 130e-6,
-    "t_g_"  : 170e-6,
+    "t_g_"  : 150e-6,
     "t_i_"  : 150e-6,
-    "C"     : 1e6,
     "k"     : 2 * np.pi / wavelength,
-    "alpha" : 9e-4,
-    "zd"    : 2000e-9
+    "alpha" : 20 * np.log(2) / (2 * np.pi / wavelength) * 10**3
+        # absorption constant, assuming the illuminating halves after 1 mm
 }
 
 
-N = 50
-K = 500
+if __name__ == "__main__":
+    xmin = -18e-6
+    xmax = 18e-6
 
-b = 1
-a = (3 * np.linspace(1, N, N) - 2) / b
+    ymin = 0
+    ymax = 3e-5
 
-xmin = -7e-6
-xmax = 7e-6
+    # xmin = -5e-4
+    # xmax = 5e-4
 
-ymin = 0
-ymax = 4e-5
+    # ymin = 0
+    # ymax = 1e-3
 
-xs = np.linspace(xmin, xmax, 255)
-ys = np.linspace(ymin, ymax, 255)
+    xs = np.linspace(xmin, xmax, 1000)
+    ys = np.linspace(ymin, ymax, 1000)
 
-X, Y = np.meshgrid(xs, ys)
+    X, Y = np.meshgrid(xs, ys)
 
-start_time = perf_counter()
+    start_time = perf_counter()
 
-psf = PSF(xs, ys, **defaults)
-#psf = [[ PSF(r, z, **defaults) for r in xs] for z in ys]
+    psf = PSF(xs, ys, **defaults)
+    #psf = [[ PSF(r, z, **defaults) for r in xs] for z in ys]
 
-#psf = np.load("psf_alpha=9e-3.npy")
+    # psf = np.load("psf.npy")
 
-end_time = perf_counter()
-print(end_time - start_time)
+    end_time = perf_counter()
+    print(end_time - start_time)
 
-fig = plt.figure(figsize=(8,6))
-plt.pcolormesh(X, Y, psf, vmin=0, vmax=np.percentile(psf, 97))
-#plt.pcolormesh(X, Y, psf)
-plt.show()
+    fig = plt.figure(figsize=(8,6))
+    plt.pcolormesh(X, Y, psf, vmin=0, vmax=np.percentile(psf, 99))
+    #plt.pcolormesh(X, Y, psf)
+    plt.savefig("simulated_NA_0.75.png")
+    plt.xlabel("meter")
+    plt.ylabel("meter")
+    plt.show()
 
-np.save("psf_focused.npy", psf)
 
-print(np.percentile(psf, 95))
+    experimental_psf = np.load("experimental_psf.npy")
+    xs = np.linspace(xmin, xmax, 106)
+    ys = np.linspace(ymin, ymax, 30)
+    X, Y = np.meshgrid(xs, ys)
+
+    fig = plt.figure(figsize=(8,6))
+    plt.pcolormesh(X, Y, experimental_psf, vmin=0, vmax=np.percentile(experimental_psf, 99))
+    plt.savefig("experimental_NA_0.75.png")
+    plt.xlabel("meter")
+    plt.ylabel("meter")
+    plt.show()
+
+
+    np.save("psf.npy", psf)
+
