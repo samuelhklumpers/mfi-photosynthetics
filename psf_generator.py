@@ -25,11 +25,11 @@ def path_difference(**kwargs):
 
     def f(z, rho):
         # Returns the optical path difference multiplied by the wave number k
-        tot  = n_s * z * (1 - (na * rho / n_s) ** 2) ** -0.5
-        tot += n_g * t_g * (1 - (na * rho / n_g) ** 2) ** -0.5
-        tot += n_i * t_i * (1 - (na * rho / n_i) ** 2) ** -0.5
-        tot -= n_g_ * t_g_ * (1 - (na * rho / n_g_) ** 2) ** -0.5
-        tot -= n_i_ * t_i_ * (1 - (na * rho / n_g_) ** 2) ** -0.5
+        tot  = n_s * z * (1 - (na * rho / n_s) ** 2) ** 0.5
+        tot += n_g * t_g * (1 - (na * rho / n_g) ** 2) ** 0.5
+        tot += n_i * t_i * (1 - (na * rho / n_i) ** 2) ** 0.5
+        tot -= n_g_ * t_g_ * (1 - (na * rho / n_g_) ** 2) ** 0.5
+        tot -= n_i_ * t_i_ * (1 - (na * rho / n_g_) ** 2) ** 0.5
 
         return k * tot
 
@@ -47,7 +47,7 @@ def path_length(**kwargs):
 
     def f(z, rho):
         # Returns the optical path length multiplied by the wave number k
-        return k * n_s * z * (1 - (na * rho / n_s) ** 2) ** -0.5
+        return k * n_s * z * (1 - (na * rho / n_s) ** 2) ** 0.5
 
     return f
 
@@ -120,7 +120,15 @@ def PSF(rs, zs, N=50, K=100, **kwargs):
     # N: number of Bessel functions used for the approximation
     # K: number of points on which the Bessel approximation is fitted
 
-    upper = 0.5 # Upper bound of the interval [0, upper] to be integrated over
+    # NA = kwargs.get("na")
+    # n_s = kwargs.get("n_s")
+    # n_i = kwargs.get("n_i")
+    # n_i_ = kwargs.get("n_i_")
+    # n_g = kwargs.get("n_g")
+    # n_g_ = kwargs.get("n_g_")
+
+    # Upper bound of the interval [0, upper] to be integrated over:
+    upper = 0.5
     # Inner coefficients of the Bessel functions:
     a = (3 * np.linspace(1, N, N) - 2) / upper
 
@@ -149,7 +157,7 @@ def PSF(rs, zs, N=50, K=100, **kwargs):
 # Default constants
 wavelength = 600e-9 # unit is meter
 defaults = {
-    "na"    : 1.5,                      # numerical aperture
+    "na"    : 1.9,                      # numerical aperture
     "n_s"   : 1.33,                     # refractive index of sample layer
     "n_g"   : 1.5,                      # actual refractive index of cover slip
     "n_i"   : 1.7,                      # actual refractive index of immersion layer
@@ -171,6 +179,11 @@ if __name__ == "__main__":
     xmax = 18e-6
     ymin = 0
     ymax = 3e-5
+
+    # xmin = -5e-4
+    # xmax = 5e-4
+    # ymin = 0
+    # ymax = 1e-3
 
     xs = np.linspace(xmin, xmax, 1000)
     ys = np.linspace(ymin, ymax, 1000)
