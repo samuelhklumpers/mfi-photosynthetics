@@ -1,7 +1,7 @@
 # mfi-photosynthetics
 MFI - Photosynthetics
 
-To reproduce the results for generating PSFs, one can import the file PSF\_Generator.py and running the following piece of code:
+To reproduce the results for generating PSFs, one can import the file PSF\_Generator.py and run the following piece of code:
 
 ```Python
 from PSG_Generator import *
